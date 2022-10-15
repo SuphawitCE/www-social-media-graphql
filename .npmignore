@@ -1,0 +1,9 @@
+.github/
+.editorconfig
+.eslintignore
+.eslintrc
+.pre-commit-config.yaml
+.prettierrc
+.tool-versions
+tests/
+coverage/
