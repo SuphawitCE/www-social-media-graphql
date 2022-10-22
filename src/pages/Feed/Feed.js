@@ -49,59 +49,6 @@ class Feed extends Component {
       .catch(this.catchError)
 
     this.loadPosts()
-
-    // Open WebSocket.io with our port
-    const socket = openSocket(URL_BASE)
-    // Listen incoming data from socket.io in 'posts' channel
-    socket.on('posts', (data) => {
-      console.log('socket-posts-data: ', data)
-
-      // Handles real-time event in posts channel
-      // Update post real-time
-      if (data.action === 'create') {
-        this.addPost(data.post)
-      }
-
-      if (data.action === 'update') {
-        this.updatePost(data.post)
-      }
-
-      if (data.action === 'delete') {
-        this.loadPosts()
-      }
-    })
-  }
-
-  addPost = (post) => {
-    this.setState((prevState) => {
-      const updatedPosts = [...prevState.posts]
-      if (prevState.postPage === 1) {
-        updatedPosts.pop()
-        updatedPosts.unshift(post)
-      }
-
-      console.log({ 'add-post': { updatedPosts, prevState } })
-
-      return {
-        posts: updatedPosts,
-        totalPosts: prevState.totalPosts + 1,
-      }
-    })
-  }
-
-  updatePost = (post) => {
-    this.setState((prevState) => {
-      const updatedPosts = [...prevState.posts]
-      const updatedPostIndex = updatedPosts.findIndex((p) => p._id === post._id)
-
-      if (updatedPostIndex > -1) {
-        updatedPosts[updatedPostIndex] = post
-      }
-
-      return {
-        posts: updatedPosts,
-      }
-    })
   }
 
   loadPosts = (direction) => {
