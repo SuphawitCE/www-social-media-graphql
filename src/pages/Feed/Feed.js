@@ -144,39 +144,56 @@ class Feed extends Component {
     formData.append('content', postData.content)
     formData.append('image', postData.image)
 
-    const isEditPost = this.state.editPost
-
-    let EDIT_POST_URL = ''
-    if (isEditPost) {
-      EDIT_POST_URL = `${URL_BASE}/feed/post/${this.state.editPost._id}`
+    // Query create post function
+    let graphqlQuery = {
+      query: `
+        mutation {
+          createPost(postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "Some url"}) {
+            _id
+            title
+            content
+            imageUrl
+            creator {
+              name
+            }
+            createdAt
+          }
+        }
+      `,
     }
 
     const httpOptions = {
-      method: isEditPost ? 'PUT' : 'POST',
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(graphqlQuery),
     }
 
     console.log({
       'finish-edit-handler': {
-        isEditPost,
-        EDIT_POST_URL,
         URL_CREATE_POST,
         httpOptions,
       },
     })
 
-    fetch(isEditPost ? EDIT_POST_URL : URL_CREATE_POST, httpOptions)
+    fetch(`${URL_BASE}/graphql`, httpOptions)
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error('Creating or editing a post failed!')
-        }
         return res.json()
       })
       .then((resData) => {
         console.log('log: ', resData)
+        if (resData.errors && resData.errors[0].status === 422) {
+          throw new Error(
+            "Validation failed. Make sure the email address isn't used yet!",
+          )
+        }
+
+        if (resData.errors) {
+          throw new Error('User create post failed')
+        }
+
         const post = {
           _id: resData.post._id,
           title: resData.post.title,
