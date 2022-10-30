@@ -164,38 +164,49 @@ class Feed extends Component {
     })
     // Set up data (with image!)
     const formData = new FormData()
-    formData.append('title', postData.title)
-    formData.append('content', postData.content)
     formData.append('image', postData.image)
-
-    // Query create post function
-    let graphqlQuery = {
-      query: `
-        mutation {
-          createPost(postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "Some url"}) {
-            _id
-            title
-            content
-            imageUrl
-            creator {
-              name
-            }
-            createdAt
-          }
-        }
-      `,
+    if (this.state.editPost) {
+      formData.append('oldPath', this.state.editPost.imagePath)
     }
 
-    const httpOptions = {
-      method: 'POST',
+    fetch(`${URL_BASE}/post-image`, {
+      method: 'PUT',
       headers: {
         Authorization: `Bearer ${this.props.token}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(graphqlQuery),
-    }
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((fileResData) => {
+        const imageUrl = fileResData.filePath
 
-    fetch(`${URL_BASE}/graphql`, httpOptions)
+        // Query create post function
+        let graphqlQuery = {
+          query: `
+            mutation {
+              createPost(postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "${imageUrl}"}) {
+                _id
+                title
+                content
+                imageUrl
+                creator {
+                  name
+                }
+                createdAt
+              }
+            }
+      `,
+        }
+
+        return fetch(`${URL_BASE}/graphql`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.props.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(graphqlQuery),
+        })
+      })
       .then((res) => {
         return res.json()
       })
@@ -217,6 +228,7 @@ class Feed extends Component {
           content: resData.data.createPost.content,
           creator: resData.data.createPost.creator,
           createdAt: resData.data.createPost.createdAt,
+          imagePath: resData.data.createPost.imagePath,
         }
 
         this.setState((prevState) => {
