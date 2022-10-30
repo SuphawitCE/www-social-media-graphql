@@ -64,27 +64,49 @@ class Feed extends Component {
       this.setState({ postPage: page })
     }
 
-    const httpOptions = {
-      headers: {
-        Authorization: `Bearer ${this.props.token}`,
-      },
+    const graphqlQuery = {
+      query: `
+        getPosts {
+          posts {
+            _id
+            title
+            content 
+            creator {
+              name
+            }
+            createdAt
+          },
+          totalPosts
+        }
+      `,
     }
 
-    fetch(`${URL_GET_POSTS}?page=${page}`, httpOptions)
+    const httpOptions = {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+
+    fetch(`${URL_BASE}/graphql`, httpOptions)
       .then((res) => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch posts.')
-        }
         return res.json()
       })
       .then((resData) => {
         console.log({ 'load-post': resData })
+
+        if (resData.errors) {
+          throw new Error('Fetching posts failed')
+        }
+
         this.setState({
-          posts: resData.posts.map((post) => ({
+          posts: resData.data.getPosts.posts.map((post) => ({
             ...post,
             imagePath: post.imageUrl,
           })),
-          totalPosts: resData.totalItems,
+          totalPosts: resData.data.getPosts.totalPosts,
           postsLoading: false,
         })
       })
