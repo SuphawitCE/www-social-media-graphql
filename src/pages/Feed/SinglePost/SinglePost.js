@@ -15,29 +15,50 @@ class SinglePost extends Component {
 
   componentDidMount() {
     const postId = this.props.match.params.postId
-    const SINGLE_POST_URL = `${URL_BASE}/feed/post`
 
-    const httpOptions = {
-      headers: {
-        Authorization: `Bearer ${this.props.token}`,
-      },
+    const graphqlQuery = {
+      query: `
+        {
+          getPostById(id: "${postId}") {
+            title
+            content
+            imageUrl
+            creator {
+              name
+            }
+            createdAt
+          }
+        }
+      `,
     }
 
-    console.log({ 'single-post-url': SINGLE_POST_URL })
-    fetch(`${SINGLE_POST_URL}/${postId}`, httpOptions)
+    const httpOptions = {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+
+    fetch(`${URL_BASE}/graphql`, httpOptions)
       .then((res) => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch status')
-        }
         return res.json()
       })
       .then((resData) => {
+        console.log('single-post: ', resData)
+        if (resData.errors) {
+          throw new Error('Failed to single post')
+        }
+
         this.setState({
-          title: resData.post.title,
-          author: resData.post.creator.name,
-          image: `${URL_BASE}/${resData.post.imageUrl}`,
-          date: new Date(resData.post.createdAt).toLocaleDateString('en-US'),
-          content: resData.post.content,
+          title: resData.data.getPostById.title,
+          author: resData.data.getPostById.creator.name,
+          image: `${URL_BASE}/${resData.data.getPostById.imageUrl}`,
+          date: new Date(resData.data.getPostById.createdAt).toLocaleDateString(
+            'en-US',
+          ),
+          content: resData.data.getPostById.content,
         })
       })
       .catch((err) => {
