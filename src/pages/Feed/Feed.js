@@ -66,17 +66,19 @@ class Feed extends Component {
 
     const graphqlQuery = {
       query: `
-        getPosts {
-          posts {
-            _id
-            title
-            content 
-            creator {
-              name
+        {
+          getPosts {
+            posts {
+              _id
+              title
+              content
+              creator {
+                name
+              }
+              createdAt
             }
-            createdAt
-          },
-          totalPosts
+            totalPosts
+          }
         }
       `,
     }
@@ -193,13 +195,6 @@ class Feed extends Component {
       body: JSON.stringify(graphqlQuery),
     }
 
-    console.log({
-      'finish-edit-handler': {
-        URL_CREATE_POST,
-        httpOptions,
-      },
-    })
-
     fetch(`${URL_BASE}/graphql`, httpOptions)
       .then((res) => {
         return res.json()
@@ -223,8 +218,20 @@ class Feed extends Component {
           creator: resData.data.createPost.creator,
           createdAt: resData.data.createPost.createdAt,
         }
+
         this.setState((prevState) => {
+          let updatedPosts = [...prevState]
+          if (prevState.editPost) {
+            const postIndex = prevState.posts.findIndex(
+              (p) => p._id === prevState.editPost._id,
+            )
+            updatedPosts[postIndex] = post
+          } else {
+            updatedPosts.unshift(post)
+          }
+
           return {
+            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false,
