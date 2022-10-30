@@ -196,7 +196,26 @@ class Feed extends Component {
                 createdAt
               }
             }
-      `,
+          `,
+        }
+
+        if (this.state.editPost) {
+          graphqlQuery = {
+            query: `
+              mutation {
+                updatePost(id: "${this.state.editPost._id}", postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "${imageUrl}"}) {
+                  _id
+                  title
+                  content
+                  imageUrl
+                  creator {
+                    name
+                  }
+                  createdAt
+                }
+              }
+            `,
+          }
         }
 
         return fetch(`${URL_BASE}/graphql`, {
@@ -212,7 +231,7 @@ class Feed extends Component {
         return res.json()
       })
       .then((resData) => {
-        console.log('log: ', resData)
+        console.log(resData, this.state.editPost)
         if (resData.errors && resData.errors[0].status === 422) {
           throw new Error(
             "Validation failed. Make sure the email address isn't used yet!",
@@ -220,19 +239,31 @@ class Feed extends Component {
         }
 
         if (resData.errors) {
-          throw new Error('User create post failed')
+          throw new Error(
+            `User ${this.state.editPost ? 'update' : 'create'} post failed`,
+          )
         }
+
+        let responseQuery = 'createPost'
+        if (this.state.editPost) {
+          responseQuery = 'updatePost'
+        }
+
+        console.log('responseQuery: ', responseQuery)
 
         const post = {
-          _id: resData.data.createPost._id,
-          title: resData.data.createPost.title,
-          content: resData.data.createPost.content,
-          creator: resData.data.createPost.creator,
-          createdAt: resData.data.createPost.createdAt,
-          imagePath: resData.data.createPost.imagePath,
+          _id: resData.data[responseQuery]._id,
+          title: resData.data[responseQuery].title,
+          content: resData.data[responseQuery].content,
+          creator: resData.data[responseQuery].creator,
+          createdAt: resData.data[responseQuery].createdAt,
+          imagePath: resData.data[responseQuery].imageUrl,
         }
 
+        console.log('post: ', post)
+
         this.setState((prevState) => {
+          console.log('prevState: ', prevState)
           let updatedPosts = [...prevState]
           if (prevState.editPost) {
             const postIndex = prevState.posts.findIndex(
