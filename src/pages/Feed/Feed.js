@@ -301,24 +301,32 @@ class Feed extends Component {
   deletePostHandler = (postId) => {
     this.setState({ postsLoading: true })
 
-    const httpOptions = {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.props.token}`,
-      },
+    const graphqlQuery = {
+      query: `
+        mutation {
+          deletePost(id: "${postId}") 
+        }
+      `,
     }
 
-    const DELETE_POST_URL = `${URL_BASE}/feed/post/${postId}`
+    const httpOptions = {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
 
-    fetch(DELETE_POST_URL, httpOptions)
+    fetch(`${URL_BASE}/graphql`, httpOptions)
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error('Deleting a post failed!')
-        }
         return res.json()
       })
       .then((resData) => {
         console.log('delete:', resData)
+        if (resData.errors) {
+          throw new Error('Deleting the post failed')
+        }
         this.loadPosts()
       })
       .catch((err) => {
