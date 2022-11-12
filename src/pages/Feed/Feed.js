@@ -28,22 +28,35 @@ class Feed extends Component {
   }
 
   componentDidMount() {
-    const httpOptions = {
-      headers: {
-        Authorization: `Bearer ${this.props.token}`,
-      },
+    const graphqlQuery = {
+      query: `
+      {
+        userStatus {
+          status
+        }
+      }
+      `,
     }
 
-    fetch(`${URL_AUTH}/status`, httpOptions)
+    const httpOptions = {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(graphqlQuery),
+    }
+
+    fetch(`${URL_BASE}/graphql`, httpOptions)
       .then((res) => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch user status.')
-        }
         return res.json()
       })
       .then((resData) => {
         console.log({ 'component-did-mount': resData })
-        this.setState({ status: resData.status })
+        if (resData.errors) {
+          throw new Error('Fetching user status failed')
+        }
+        this.setState({ status: resData.data.userStatus.status })
       })
       .catch(this.catchError)
 
@@ -118,24 +131,36 @@ class Feed extends Component {
 
   statusUpdateHandler = (event) => {
     event.preventDefault()
+
+    const graphqlQuery = {
+      query: `
+        mutation {
+          updateStatus(status: "${this.state.status}") {
+            status
+          }
+        }
+      `,
+    }
+
     const httpOptions = {
-      method: 'PUT',
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${this.props.token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ status: this.state.status }),
+      body: JSON.stringify(graphqlQuery),
     }
 
-    fetch(`${URL_AUTH}/status`, httpOptions)
+    fetch(`${URL_BASE}/graphql`, httpOptions)
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Can't update status!")
-        }
         return res.json()
       })
       .then((resData) => {
         console.log({ 'status-update': resData })
+
+        if (resData.errors) {
+          throw new Error('Update user status failed')
+        }
       })
       .catch(this.catchError)
   }
