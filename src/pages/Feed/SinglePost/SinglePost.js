@@ -18,8 +18,8 @@ class SinglePost extends Component {
 
     const graphqlQuery = {
       query: `
-        {
-          getPostById(id: "${postId}") {
+        query FetchSinglePost($postId: ID!) {
+          getPostById(id: $postId) {
             title
             content
             imageUrl
@@ -30,6 +30,9 @@ class SinglePost extends Component {
           }
         }
       `,
+      variables: {
+        postId,
+      },
     }
 
     const httpOptions = {
