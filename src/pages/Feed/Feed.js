@@ -306,7 +306,7 @@ class Feed extends Component {
 
         this.setState((prevState) => {
           console.log('prevState: ', prevState)
-          let updatedPosts = [...prevState]
+          let updatedPosts = [...prevState.posts]
           let updatedTotalPosts = prevState.totalPosts
 
           if (prevState.editPost) {
@@ -316,7 +316,7 @@ class Feed extends Component {
             updatedPosts[postIndex] = post
           } else {
             updatedTotalPosts++
-            if (prevState.posts.length >= 2) {
+            if (prevState.posts.length >= 3) {
               updatedPosts.pop()
             }
             updatedPosts.unshift(post)
